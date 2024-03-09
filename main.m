@@ -14,14 +14,14 @@ void ActivateInputSource(int input_modes);
 
 // Each input method needs a unique connection name.
 // Note that periods and spaces are not allowed in the connection name.
-const NSString *kConnectionName = @"Squirrel_1_Connection";
+static NSString* const kConnectionName = @"Squirrel_1_Connection";
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc > 1 && !strcmp("--quit", argv[1])) {
-    NSString *bundleId = [NSBundle mainBundle].bundleIdentifier;
-    NSArray *runningSquirrels =
+    NSString* bundleId = [NSBundle mainBundle].bundleIdentifier;
+    NSArray<NSRunningApplication*>* runningSquirrels =
         [NSRunningApplication runningApplicationsWithBundleIdentifier:bundleId];
-    for (NSRunningApplication *squirrelApp in runningSquirrels) {
+    for (NSRunningApplication* squirrelApp in runningSquirrels) {
       [squirrelApp terminate];
     }
     return 0;
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     RegisterInputSource();
     int input_modes = GetEnabledInputModes();
     DeactivateInputSource();
-    ActivateInputSource(input_modes ? input_modes : DEFAULT_INPUT_MODE);
+    ActivateInputSource(input_modes ?: DEFAULT_INPUT_MODE);
     return 0;
   }
 
@@ -63,14 +63,16 @@ int main(int argc, char *argv[]) {
 
   @autoreleasepool {
     // find the bundle identifier and then initialize the input method server
-    NSBundle *main = [NSBundle mainBundle];
-    IMKServer *server __unused =
-        [[IMKServer alloc] initWithName:(NSString *)kConnectionName
+    NSBundle* main = [NSBundle mainBundle];
+    IMKServer* server __unused =
+        [[IMKServer alloc] initWithName:kConnectionName
                        bundleIdentifier:main.bundleIdentifier];
 
     // load the bundle explicitly because in this case the input method is a
     // background only application
-    [main loadNibNamed:@"MainMenu" owner:[NSApplication sharedApplication] topLevelObjects:NULL];
+    [main loadNibNamed:@"MainMenu"
+                  owner:[NSApplication sharedApplication]
+        topLevelObjects:nil];
 
     // opencc will be configured with relative dictionary paths
     [[NSFileManager defaultManager]
@@ -78,15 +80,18 @@ int main(int argc, char *argv[]) {
 
     if (NSApp.squirrelAppDelegate.problematicLaunchDetected) {
       NSLog(@"Problematic launch detected!");
-      NSArray *args = @[
-        @"Problematic launch detected! \
+      NSArray* args = @[ @"Problematic launch detected! \
                        Squirrel may be suffering a crash due to imporper configuration. \
-                       Revert previous modifications to see if the problem recurs."
-      ];
-      [NSTask launchedTaskWithLaunchPath:@"/usr/bin/say" arguments:args];
+                       Revert previous modifications to see if the problem recurs." ];
+      [NSTask
+          launchedTaskWithExecutableURL:[NSURL fileURLWithPath:@"/usr/bin/say"
+                                                   isDirectory:NO]
+                              arguments:args
+                                  error:nil
+                     terminationHandler:nil];
     } else {
       [NSApp.squirrelAppDelegate setupRime];
-      [NSApp.squirrelAppDelegate startRimeWithFullCheck:NO];
+      [NSApp.squirrelAppDelegate startRimeWithFullCheck:false];
       [NSApp.squirrelAppDelegate loadSettings];
       NSLog(@"Squirrel reporting!");
     }
